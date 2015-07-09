@@ -1,4 +1,4 @@
-![](http://www.pearlgames.be/uploads/10/733f2bc9e0315286a81aaf4ec9eac538.jpg)
+![](http://www.pearlgames.be/uploads/7/297ee27d6a90b27cf85031bbbf677c18.jpg)
 
 # ginkgopolis-fsharp
 
