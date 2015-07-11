@@ -18,6 +18,12 @@ type ResourceColor =
 
 type SuccessPoint = unit
 
+//             _                 _          _   _             
+//  /\ /\ _ __| |__   __ _ _ __ (_)______ _| |_(_) ___  _ __  
+// / / \ \ '__| '_ \ / _` | '_ \| |_  / _` | __| |/ _ \| '_ \ 
+// \ \_/ / |  | |_) | (_| | | | | |/ / (_| | |_| | (_) | | | |
+//  \___/|_|  |_.__/ \__,_|_| |_|_/___\__,_|\__|_|\___/|_| |_|
+
 type UrbanizationToken = 
     | A
     | B
@@ -32,7 +38,18 @@ type UrbanizationToken =
     | K
     | L
 
-type UrbanizationCard = UrbanizationToken
+let AllUrbanizationTokens : UrbanizationToken list = [ A; B; C; D; E; F; G; H; I; J; K; L ]
+
+type UrbanizationCardId = UrbanizationToken
+
+let AllUrbanizationCardIds : UrbanizationCardId list = AllUrbanizationTokens
+
+//    ___       _ _     _ _               _____ _ _      
+//   / __\_   _(_) | __| (_)_ __   __ _  /__   (_) | ___ 
+//  /__\// | | | | |/ _` | | '_ \ / _` |   / /\/ | |/ _ \
+// / \/  \ |_| | | | (_| | | | | | (_| |  / /  | | |  __/
+// \_____/\__,_|_|_|\__,_|_|_| |_|\__, |  \/   |_|_|\___|
+//                                |___/                  
 
 type BuildingColor = 
     | Blue
@@ -44,23 +61,47 @@ type BuildingNum = int
 type BuildingTile = 
     { color : BuildingColor
       number : BuildingNum }
-      override m.ToString() = (sprintf "BuildingTile {%A, %A}" m.color m.number)
+    override m.ToString() = (sprintf "BuildingTile {%A, %A}" m.color m.number)
 
 let newBuildingTile (color : BuildingColor) (number : BuildingNum) = 
     { color = color
       number = number }
 
-type BuildingCard = BuildingTile
+let generateBuildingTiles (min, max) : BuildingTile list = 
+    [ for num in min..max do
+          for color in [ Blue; Red; Yellow ] -> (newBuildingTile color num) ]
 
-type Card = 
-    | UrbanizationCard of UrbanizationCard
-    | BuildingCard of BuildingCard
+let initialBuildingTiles = generateBuildingTiles (1, 3)
+
 
 type GreenSpaceTile = unit
 
 type Tile = 
     | BuildingTile of BuildingTile
     | GreenSpaceTile of GreenSpaceTile
+
+let asTile (buildingTile:BuildingTile) = BuildingTile buildingTile
+
+
+//    ___              _ 
+//   / __\__ _ _ __ __| |
+//  / /  / _` | '__/ _` |
+// / /__| (_| | | | (_| |
+// \____/\__,_|_|  \__,_|
+                      
+
+type BuildingCardId = BuildingTile
+
+type CardId = 
+    | UrbanizationCardId of UrbanizationCardId
+    | BuildingCardId of BuildingCardId
+
+//    ___ _                          _            
+//   / __\ |__   __ _ _ __ __ _  ___| |_ ___ _ __ 
+//  / /  | '_ \ / _` | '__/ _` |/ __| __/ _ \ '__|
+// / /___| | | | (_| | | | (_| | (__| ||  __/ |   
+// \____/|_| |_|\__,_|_|  \__,_|\___|\__\___|_|   
+                                               
 
 type CharacterId = int
 
@@ -74,17 +115,31 @@ type CharacterGroup =
     | Group6
     | Expert
 
+type InitialItem = 
+    | Resource = 0
+    | SuccessPoint = 1
+    | BuildingTile = 2
+    | Event = 3
+
+//    __                 _   
+//   /__\_   _____ _ __ | |_ 
+//  /_\ \ \ / / _ \ '_ \| __|
+// //__  \ V /  __/ | | | |_ 
+// \__/   \_/ \___|_| |_|\__|
+                          
 type Event = 
     | DesignCompetition
     | AdvertisingCampaign
     | Expropriation
     | QualityControl
 
-type InitialItem = 
-    | Resource = 0
-    | SuccessPoint = 1
-    | BuildingTile = 2
-    | Event = 3
+
+//    ___ _                       
+//   / _ \ | __ _ _   _  ___ _ __ 
+//  / /_)/ |/ _` | | | |/ _ \ '__|
+// / ___/| | (_| | |_| |  __/ |   
+// \/    |_|\__,_|\__, |\___|_|   
+//                |___/           
 
 type Player = string
 
@@ -101,12 +156,19 @@ type PlayerState =
     { nbResource : int
       nbResourceAvailable : int
       nbSuccessPoint : int
-      cards : BuildingCard list
+      cards : BuildingCardId list
       characters : CharacterId list
       tiles : Tile list }
 
-type PlayerHand = Card list
+type PlayerHand = CardId list
 
+
+//    ___                     
+//   / _ \__ _ _ __ ___   ___ 
+//  / /_\/ _` | '_ ` _ \ / _ \
+// / /_\\ (_| | | | | | |  __/
+// \____/\__,_|_| |_| |_|\___|
+                           
 type Game = 
     { playersToIds : Map<Player, PlayerId>
       playerStates : Map<PlayerId, PlayerState>
@@ -119,7 +181,7 @@ type GameError =
     | PlayerIdNotBound of PlayerId
     | NoResourceAvailable
     | NoTileAvailableInGame
-    | UnsupportedIncreasableItem
+    | UnsupportedGain
 
 let playerStateOf (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) : TwoTrack<PlayerState, GameError> = 
     match gameTT with
@@ -146,6 +208,20 @@ let rec mapPlayers (players : Player list) (playerIds : PlayerId list) (mapped :
         | [] -> Success mapped
     | [] -> Error(TooMuchPlayer players)
 
+
+// --
+// http://www.devx.com/dotnet/Article/40537/0/page/3#sthash.xM1pn761.dpuf
+let randomNumberGenerator = new System.Random()
+
+// type is specified to prevent crash on mono...
+let shuffle (cards : Tile list) = 
+    let upperBound = (List.length cards) * 100
+    let weightedCards = List.map (fun card -> card, randomNumberGenerator.Next(0, upperBound)) cards
+    let sortedWeightedCards = 
+        List.sortWith (fun (_, leftWeight) (_, rightWeight) -> leftWeight - rightWeight) weightedCards
+    List.map (fun (card, _) -> card) sortedWeightedCards
+
+
 let newGame (players : Player list) (availableTiles : Tile list) : TwoTrack<Game, GameError> = 
     match mapPlayers players AllPlayerIds Map.empty with
     | Error err -> Error err
@@ -169,9 +245,17 @@ let newGame (players : Player list) (availableTiles : Tile list) : TwoTrack<Game
                   playerHands = Map.empty
                   availableTiles = availableTiles }
 
+//    _        _   _             
+//   /_\   ___| |_(_) ___  _ __  
+//  //_\\ / __| __| |/ _ \| '_ \ 
+// /  _  \ (__| |_| | (_) | | | |
+// \_/ \_/\___|\__|_|\___/|_| |_|
+                              
+
 type ActionKind = 
-    | Urbanization = 1
-    | FloorConstruction = 2
+    | Exploit = 1
+    | Urbanization = 2
+    | FloorConstruction = 3
     | EndGame = 10
 
 type UpdateGame = PlayerId -> TwoTrack<Game, GameError> -> TwoTrack<Game, GameError>
@@ -180,13 +264,13 @@ let identityUpdateGame : UpdateGame = fun (player : PlayerId) (gameTT : TwoTrack
 
 type OnAction = ActionKind -> UpdateGame
 
-type IncreasableItem = 
+type Gain = 
     | Resource = 0
     | AvailableResource = 1
     | SuccessPoint = 2
-    | BuildingTile = 3
+    | Tile = 3
 
-let increase (item : IncreasableItem) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) = 
+let gain (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) = 
     match gameTT with
     | Error _ -> gameTT
     | Success game -> 
@@ -197,33 +281,41 @@ let increase (item : IncreasableItem) (player : PlayerId) (gameTT : TwoTrack<Gam
         | Some playerState -> 
             let playerState = ps.[player]
             match item with
-            | IncreasableItem.Resource -> 
+            | Gain.Resource -> 
                 if playerState.nbResourceAvailable > 0 then 
                     let newState = 
                         { playerState with nbResource = playerState.nbResource + 1
                                            nbResourceAvailable = playerState.nbResourceAvailable - 1 }
                     Success { game with playerStates = ps.Add(player, newState) }
                 else Error NoResourceAvailable
-            | IncreasableItem.AvailableResource -> 
+            | Gain.AvailableResource -> 
                 let newState = { playerState with nbResourceAvailable = playerState.nbResourceAvailable + 1 }
                 Success { game with playerStates = ps.Add(player, newState) }
-            | IncreasableItem.SuccessPoint -> 
+            | Gain.SuccessPoint -> 
                 let newState = { playerState with nbSuccessPoint = playerState.nbSuccessPoint + 1 }
                 Success { game with playerStates = ps.Add(player, newState) }
-            | IncreasableItem.BuildingTile -> 
+            | Gain.Tile -> 
                 match ts with
                 | [] -> Error NoTileAvailableInGame
                 | tile :: remainings -> 
                     let newState = { playerState with tiles = tile :: playerState.tiles }
                     Success { game with playerStates = ps.Add(player, newState)
                                         availableTiles = remainings }
-            | _ -> Error UnsupportedIncreasableItem
+            | _ -> Error UnsupportedGain
 
 let whenAction (requiredKind : ActionKind) (updater : UpdateGame) = 
     fun (kind : ActionKind) -> 
         if kind = requiredKind then updater
         else identityUpdateGame
 
+let NoAction:OnAction = fun (kind : ActionKind) -> identityUpdateGame 
+
+//    ___ _                          _                _        _   _             
+//   / __\ |__   __ _ _ __ __ _  ___| |_ ___ _ __    /_\   ___| |_(_) ___  _ __  
+//  / /  | '_ \ / _` | '__/ _` |/ __| __/ _ \ '__|  //_\\ / __| __| |/ _ \| '_ \ 
+// / /___| | | | (_| | | | (_| | (__| ||  __/ |    /  _  \ (__| |_| | (_) | | | |
+// \____/|_| |_|\__,_|_|  \__,_|\___|\__\___|_|    \_/ \_/\___|\__|_|\___/|_| |_|
+                                                                              
 type CharacterCard = 
     { id : CharacterId
       color : BuildingColor
@@ -231,30 +323,41 @@ type CharacterCard =
       initialItems : InitialItem list
       onAction : OnAction }
 
+type CharacterCards = CharacterId -> CharacterCard
+
 let character1 : CharacterCard = 
     { id = 1
       color = Red
       group = Group1
       initialItems = [ InitialItem.Resource; InitialItem.SuccessPoint; InitialItem.BuildingTile ]
-      onAction = whenAction ActionKind.Urbanization (increase IncreasableItem.Resource) }
+      onAction = whenAction ActionKind.Urbanization (gain Gain.Resource) }
 
-// --
-// http://www.devx.com/dotnet/Article/40537/0/page/3#sthash.xM1pn761.dpuf
-let randomNumberGenerator = new System.Random()
+//    ___       _ _     _ _                 _        _   _             
+//   / __\_   _(_) | __| (_)_ __   __ _    /_\   ___| |_(_) ___  _ __  
+//  /__\// | | | | |/ _` | | '_ \ / _` |  //_\\ / __| __| |/ _ \| '_ \ 
+// / \/  \ |_| | | | (_| | | | | | (_| | /  _  \ (__| |_| | (_) | | | |
+// \_____/\__,_|_|_|\__,_|_|_| |_|\__, | \_/ \_/\___|\__|_|\___/|_| |_|
+//                                |___/                                
 
-// type is specified to prevent crash on mono...
-let shuffle (cards : Tile list) = 
-    let upperBound = (List.length cards) * 100
-    let weightedCards = List.map (fun card -> card, randomNumberGenerator.Next(0, upperBound)) cards
-    let sortedWeightedCards = 
-        List.sortWith (fun (_, leftWeight) (_, rightWeight) -> leftWeight - rightWeight) weightedCards
-    List.map (fun (card, _) -> card) sortedWeightedCards
+type BuildingActions = BuildingCardId -> OnAction
 
-let generateBuildingTiles (min, max) : Tile list = 
-    [ for num in min..max do
-          for color in [ Blue; Red; Yellow ] -> BuildingTile(newBuildingTile color num) ]
+let defaultBuildingActions:BuildingActions = 
+    fun cardId ->
+        match (cardId.color, cardId.number) with
+        | (Blue, 1) -> whenAction ActionKind.Exploit (gain Gain.Tile)
+        | (Blue, 2) -> whenAction ActionKind.Urbanization (gain Gain.Tile)
+        | (Blue, 3) -> whenAction ActionKind.FloorConstruction (gain Gain.Tile)
+        | (Blue, 4) -> whenAction ActionKind.Exploit (gain Gain.Tile)
+        | (Blue, 5) -> whenAction ActionKind.Urbanization (gain Gain.Tile)
+        | (Blue, 6) -> whenAction ActionKind.FloorConstruction (gain Gain.Tile)
+        | _ -> NoAction
 
-let initialBuildingTiles : Tile list = generateBuildingTiles (1, 3)
+//    __                         _   
+//   / /  __ _ _   _  ___  _   _| |_ 
+//  / /  / _` | | | |/ _ \| | | | __|
+// / /__| (_| | |_| | (_) | |_| | |_ 
+// \____/\__,_|\__, |\___/ \__,_|\__|
+//             |___/                 
 
 type Coord = int * int
 
@@ -264,10 +367,10 @@ type BuildingBlock =
       player : Option<Player>
       nbResource : int }
 
-type GreenSpaceBlock =
-    { tile: GreenSpaceTile
+type GreenSpaceBlock = 
+    { tile : GreenSpaceTile
       player : Option<Player>
-      nbResource : int}
+      nbResource : int }
 
 type CityBlock = 
     | UrbanizationBlock of UrbanizationToken
@@ -300,12 +403,12 @@ let layoutCity (buildingTiles : Tile list) =
     
     let initBlock (tile : Tile) : CityBlock = 
         match tile with
-        | BuildingTile bt ->
+        | BuildingTile bt -> 
             BuildingBlock { inConstruction = false
                             tiles = [ bt ]
                             player = Option.None
                             nbResource = 0 }
-        | GreenSpaceTile gs ->
+        | GreenSpaceTile gs -> 
             GreenSpaceBlock { tile = gs
                               player = Option.None
                               nbResource = 0 }
@@ -394,8 +497,7 @@ let printCity (city : City) =
     
     let formatCellInfo (block : CityBlock) = 
         match block with
-        | BuildingBlock b -> 
-            formatBuildingTiles b b.tiles
+        | BuildingBlock b -> formatBuildingTiles b b.tiles
         | GreenSpaceBlock b -> formatGreenSpace b
         | UrbanizationBlock token -> formatUrbz token
     

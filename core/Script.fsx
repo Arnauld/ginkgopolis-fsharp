@@ -22,7 +22,7 @@ let Throws<'T when 'T :> exn>(f) =
     | _ -> fail()
 
 // -----------------------------------------------------------------------------
-let shuffled = shuffle initialBuildingTiles
+let shuffled = shuffle (List.map asTile initialBuildingTiles)
 
 printfn "Tiles shuffled"
 printfn "%A" shuffled
