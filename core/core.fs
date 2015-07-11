@@ -44,6 +44,11 @@ type BuildingNum = int
 type BuildingTile = 
     { color : BuildingColor
       number : BuildingNum }
+      override m.ToString() = (sprintf "BuildingTile {%A, %A}" m.color m.number)
+
+let newBuildingTile (color : BuildingColor) (number : BuildingNum) = 
+    { color = color
+      number = number }
 
 type BuildingCard = BuildingTile
 
@@ -187,7 +192,6 @@ let increase (item : IncreasableItem) (player : PlayerId) (gameTT : TwoTrack<Gam
     | Success game -> 
         let ps = game.playerStates
         let ts = game.availableTiles
-
         match ps.TryFind(player) with
         | None -> Error(PlayerIdNotBound player)
         | Some playerState -> 
@@ -227,7 +231,6 @@ type CharacterCard =
       initialItems : InitialItem list
       onAction : OnAction }
 
-
 let character1 : CharacterCard = 
     { id = 1
       color = Red
@@ -235,47 +238,48 @@ let character1 : CharacterCard =
       initialItems = [ InitialItem.Resource; InitialItem.SuccessPoint; InitialItem.BuildingTile ]
       onAction = whenAction ActionKind.Urbanization (increase IncreasableItem.Resource) }
 
-
 // --
 // http://www.devx.com/dotnet/Article/40537/0/page/3#sthash.xM1pn761.dpuf
 let randomNumberGenerator = new System.Random()
 
 // type is specified to prevent crash on mono...
-let shuffle (cards : BuildingTile list) = 
+let shuffle (cards : Tile list) = 
     let upperBound = (List.length cards) * 100
     let weightedCards = List.map (fun card -> card, randomNumberGenerator.Next(0, upperBound)) cards
     let sortedWeightedCards = 
         List.sortWith (fun (_, leftWeight) (_, rightWeight) -> leftWeight - rightWeight) weightedCards
     List.map (fun (card, _) -> card) sortedWeightedCards
 
-let initialBuildingTiles : BuildingTile list = 
-    [ for num in 1..3 do
-          for color in [ Blue; Red; Yellow ] -> 
-              { color = color
-                number = num } ]
+let generateBuildingTiles (min, max) : Tile list = 
+    [ for num in min..max do
+          for color in [ Blue; Red; Yellow ] -> BuildingTile(newBuildingTile color num) ]
+
+let initialBuildingTiles : Tile list = generateBuildingTiles (1, 3)
 
 type Coord = int * int
 
-type TilesOrGreenSpace = 
-    | BuildingTiles of BuildingTile list
-    | GreenSpaceTile of GreenSpaceTile
-
 type BuildingBlock = 
     { inConstruction : bool
-      tiles : TilesOrGreenSpace
+      tiles : BuildingTile list
       player : Option<Player>
       nbResource : int }
+
+type GreenSpaceBlock =
+    { tile: GreenSpaceTile
+      player : Option<Player>
+      nbResource : int}
 
 type CityBlock = 
     | UrbanizationBlock of UrbanizationToken
     | BuildingBlock of BuildingBlock
+    | GreenSpaceBlock of GreenSpaceBlock
 
 type CityLayout = Map<Coord, CityBlock>
 
 type City = 
     { layout : CityLayout }
 
-let layoutCity (buildingTiles : BuildingTile list) = 
+let layoutCity (buildingTiles : Tile list) = 
     let urbz = 
         [ ((-1, +2), UrbanizationBlock A)
           ((0, +2), UrbanizationBlock B)
@@ -294,11 +298,17 @@ let layoutCity (buildingTiles : BuildingTile list) =
         [ for y in [ 1; 0; -1 ] do
               for x in [ -1; 0; 1 ] -> (x, y) ]
     
-    let initBlock (tile : BuildingTile) : CityBlock = 
-        BuildingBlock { inConstruction = false
-                        tiles = BuildingTiles [ tile ]
-                        player = Option.None
-                        nbResource = 0 }
+    let initBlock (tile : Tile) : CityBlock = 
+        match tile with
+        | BuildingTile bt ->
+            BuildingBlock { inConstruction = false
+                            tiles = [ bt ]
+                            player = Option.None
+                            nbResource = 0 }
+        | GreenSpaceTile gs ->
+            GreenSpaceBlock { tile = gs
+                              player = Option.None
+                              nbResource = 0 }
     
     let layoutBT = 
         buildingTiles
@@ -375,7 +385,7 @@ let printCity (city : City) =
                           else ""))
           (sprintf "#%d    " n) ]
     
-    let formatGreenSpace (b : BuildingBlock) = 
+    let formatGreenSpace (b : GreenSpaceBlock) = 
         [ ("       ")
           ("   GS  ")
           (sprintf " (%2A)  " (if b.player.IsSome then b.player.Value
@@ -385,9 +395,8 @@ let printCity (city : City) =
     let formatCellInfo (block : CityBlock) = 
         match block with
         | BuildingBlock b -> 
-            match b.tiles with
-            | BuildingTiles buildingTiles -> formatBuildingTiles b buildingTiles
-            | GreenSpaceTile gs -> formatGreenSpace b
+            formatBuildingTiles b b.tiles
+        | GreenSpaceBlock b -> formatGreenSpace b
         | UrbanizationBlock token -> formatUrbz token
     
     let printCell (r : int) (y : int) (x : int) = 

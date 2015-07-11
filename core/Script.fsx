@@ -4,7 +4,6 @@
 
 open ginkgopolis.core
 
-
 let Fail message = failwith message
 
 let IsTrue(success) = 
@@ -23,12 +22,6 @@ let Throws<'T when 'T :> exn>(f) =
     | _ -> fail()
 
 // -----------------------------------------------------------------------------
-
-// TEST - too much player
-// TEST - player/playerId interleaved
-
-
-
 let shuffled = shuffle initialBuildingTiles
 
 printfn "Tiles shuffled"
@@ -42,8 +35,7 @@ let keys =
     |> List.map (fun (k, v) -> k)
 
 AreEqual 21 (List.length keys)
-
-
 AreEqual ((-2, -2), (+2, +2)) (rangeOf city.layout)
-
 printCity city
+
+// -----------------------------------------------------------------------------
