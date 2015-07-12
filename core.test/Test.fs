@@ -5,32 +5,29 @@ open NUnit.Framework
 open ginkgopolis.core
 
 [<TestFixture>]
-type ``urbanization tokens``() =
-
+type ``urbanization tokens``() = 
     [<Test>]
-    member x.``there should be 12 differents urbanization tokens``() =
+    member x.``there should be 12 differents urbanization tokens``() = 
         let tokens = AllUrbanizationTokens
-        Assert.AreEqual (12, List.length tokens)
-        Assert.AreEqual (12, Set.count (Set.ofList tokens))
+        Assert.AreEqual(12, List.length tokens)
+        Assert.AreEqual(12, Set.count (Set.ofList tokens))
 
 [<TestFixture>]
-type ``building tiles``() =
-
+type ``building tiles``() = 
     [<Test>]
-    member x.``there should be 1 to 3 for blue, yellow, red building tiles in initial layout``() =
-        let eq (bt:BuildingTile) = (fun other -> other = bt)
+    member x.``there should be 1 to 3 for blue, yellow, red building tiles in initial layout``() = 
+        let eq (bt : BuildingTile) = (fun other -> other = bt)
         let tiles = initialBuildingTiles
         Assert.AreEqual(9, List.length tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Blue 1)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Blue 2)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Blue 3)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Red 1)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Red 2)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Red 3)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Yellow 1)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Yellow 2)) tiles)
-        Assert.IsTrue (List.exists (eq (newBuildingTile Yellow 3)) tiles)
-
+        Assert.IsTrue(List.exists (eq (newBuildingTile Blue 1)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Blue 2)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Blue 3)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Red 1)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Red 2)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Red 3)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 1)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 2)) tiles)
+        Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 3)) tiles)
 
 [<TestFixture>]
 type ``mapPlayers function``() = 
@@ -135,13 +132,13 @@ type ``triggered action``() =
         //
         // Check player's hand
         //
-        let ts  = withinPlayerStateOf Player2 ng2 (fun p -> (p.tiles, p.nbTilePoint))
+        let ts = withinPlayerStateOf Player2 ng2 (fun p -> (p.tiles, p.nbTilePoint))
         match ts with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> 
-            let (player2Tiles,player2TilePoints) = v
-            Assert.IsTrue (List.isEmpty player2Tiles)
-            Assert.AreEqual (1,player2TilePoints)
+            let (player2Tiles, player2TilePoints) = v
+            Assert.IsTrue(List.isEmpty player2Tiles)
+            Assert.AreEqual(1, player2TilePoints)
         //
         // Check game's available tiles
         //
