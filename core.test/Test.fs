@@ -30,18 +30,18 @@ type ``building tiles``() =
         Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 3)) tiles)
 
 [<TestFixture>]
-type ``mapPlayers function``() = 
+type ``affectIdToPlayers function``() = 
     
     [<Test>]
     member x.``should fail when trying to map more than 5 players ``() = 
-        match mapPlayers [ "John"; "Carmen"; "Pacman"; "Flibuste"; "Colin"; "Martin" ] AllPlayerIds Map.empty with
+        match affectIdToPlayers [ "John"; "Carmen"; "Pacman"; "Flibuste"; "Colin"; "Martin" ] AllPlayerIds Map.empty with
         | Error(TooMuchPlayer ps) -> Assert.AreEqual([ "Martin" ], ps)
         | Error x -> Assert.Fail(sprintf "Wrong error: %A" x)
         | Success _ -> Assert.Fail "More than 5 players should bot be allowed"
     
     [<Test>]
     member x.``should associate player with playerId``() = 
-        match mapPlayers [ "Carmen"; "Pacman" ] AllPlayerIds Map.empty with
+        match affectIdToPlayers [ "Carmen"; "Pacman" ] AllPlayerIds Map.empty with
         | Error x -> Assert.Fail(sprintf "No error expected: %A" x)
         | Success mapped -> 
             let expected = 

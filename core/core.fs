@@ -201,11 +201,11 @@ let withinPlayerStateOf<'T> (player : PlayerId) (gameTT : TwoTrack<Game, GameErr
     | Success ps -> Success(func ps)
 
 // interleave player and playerIds
-let rec mapPlayers (players : Player list) (playerIds : PlayerId list) (mapped : Map<Player, PlayerId>) = 
+let rec affectIdToPlayers (players : Player list) (playerIds : PlayerId list) (mapped : Map<Player, PlayerId>) = 
     match playerIds with
     | id :: ids -> 
         match players with
-        | p :: ps -> mapPlayers ps ids (mapped.Add(p, id))
+        | p :: ps -> affectIdToPlayers ps ids (mapped.Add(p, id))
         | [] -> Success mapped
     | [] -> Error(TooMuchPlayer players)
 
@@ -224,7 +224,7 @@ let shuffle (cards : Tile list) =
 
 
 let newGame (players : Player list) (availableTiles : Tile list) : TwoTrack<Game, GameError> = 
-    match mapPlayers players AllPlayerIds Map.empty with
+    match affectIdToPlayers players AllPlayerIds Map.empty with
     | Error err -> Error err
     | Success ids -> 
         let initialPlayerState = 
