@@ -121,7 +121,7 @@ type ``triggered action``() =
         | Success v -> Assert.AreEqual(1, v)
     
     [<Test>]
-    member x.``increase tile should move the first tile available from game to player's hand``() = 
+    member x.``increase tile should no alter available tiles in game and player's hand``() = 
         let character2OnAction = whenAction ActionKind.Urbanization (gain Gain.Tile)
         
         let availableTiles : Tile list = 
@@ -135,13 +135,13 @@ type ``triggered action``() =
         //
         // Check player's hand
         //
-        let player2Tiles = withinPlayerStateOf Player2 ng2 (fun p -> p.tiles)
-        match player2Tiles with
+        let ts  = withinPlayerStateOf Player2 ng2 (fun p -> (p.tiles, p.nbTilePoint))
+        match ts with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> 
-            match (List.head v) with
-            | BuildingTile t -> Assert.AreEqual((newBuildingTile Blue 7), t)
-            | x -> Assert.Fail(sprintf "Invalid tile type, got: %A" x)
+            let (player2Tiles,player2TilePoints) = v
+            Assert.IsTrue (List.isEmpty player2Tiles)
+            Assert.AreEqual (1,player2TilePoints)
         //
         // Check game's available tiles
         //
@@ -149,7 +149,8 @@ type ``triggered action``() =
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success g -> 
             let expectedTiles = 
-                [ (newBuildingTile Yellow 5)
+                [ (newBuildingTile Blue 7)
+                  (newBuildingTile Yellow 5)
                   (newBuildingTile Red 9) ]
                 |> List.map (fun t -> BuildingTile t)
             Assert.AreEqual(expectedTiles, g.availableTiles)

@@ -156,6 +156,7 @@ type PlayerState =
     { nbResource : int
       nbResourceAvailable : int
       nbSuccessPoint : int
+      nbTilePoint: int
       cards : BuildingCardId list
       characters : CharacterId list
       tiles : Tile list }
@@ -230,6 +231,7 @@ let newGame (players : Player list) (availableTiles : Tile list) : TwoTrack<Game
             { nbResource = 0
               nbResourceAvailable = 0
               nbSuccessPoint = 0
+              nbTilePoint = 0
               cards = []
               characters = []
               tiles = [] }
@@ -295,13 +297,19 @@ let gain (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) 
                 let newState = { playerState with nbSuccessPoint = playerState.nbSuccessPoint + 1 }
                 Success { game with playerStates = ps.Add(player, newState) }
             | Gain.Tile -> 
-                match ts with
-                | [] -> Error NoTileAvailableInGame
-                | tile :: remainings -> 
-                    let newState = { playerState with tiles = tile :: playerState.tiles }
-                    Success { game with playerStates = ps.Add(player, newState)
-                                        availableTiles = remainings }
+                let newState = { playerState with nbTilePoint = playerState.nbTilePoint + 1 }
+                Success { game with playerStates = ps.Add(player, newState) }
             | _ -> Error UnsupportedGain
+
+let consumeTilePoint () = 
+//                match ts with
+//                | [] -> Error NoTileAvailableInGame
+//                | tile :: remainings -> 
+//                    let newState = { playerState with nbTilePoint = nbTilePoint + 1 }
+//                    Success { game with playerStates = ps.Add(player, newState)
+//                                        availableTiles = remainings }
+   failwith "Not implemented"
+
 
 let whenAction (requiredKind : ActionKind) (updater : UpdateGame) = 
     fun (kind : ActionKind) -> 
