@@ -38,14 +38,14 @@ type ``building tiles``() =
                                                       Assert.AreEqual(1, t.TileCost)))
     
     [<Test>]
-    member x.``Tile cost should be 2 for buildings 21 to 23 ``() = 
+    member x.``Tile cost should be 2 for buildings 21 to 23 - expert expansion``() = 
         [ Blue; Yellow; Red ] |> List.iter (fun color -> 
                                      [ 21..23 ] |> List.iter (fun n -> 
                                                        let t = (newBuildingTile color n)
                                                        Assert.AreEqual(2, t.TileCost)))
     
     [<Test>]
-    member x.``Tile cost should be 3 for buildings 24 and 25``() = 
+    member x.``Tile cost should be 3 for buildings 24 and 25 - expert expansion``() = 
         [ Blue; Yellow; Red ] |> List.iter (fun color -> 
                                      [ 24..25 ] |> List.iter (fun n -> 
                                                        let t = (newBuildingTile color n)
