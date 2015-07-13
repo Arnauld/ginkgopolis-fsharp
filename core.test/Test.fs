@@ -14,6 +14,7 @@ type ``urbanization tokens``() =
 
 [<TestFixture>]
 type ``building tiles``() = 
+    
     [<Test>]
     member x.``there should be 1 to 3 for blue, yellow, red building tiles in initial layout``() = 
         let eq (bt : BuildingTile) = (fun other -> other = bt)
@@ -28,6 +29,27 @@ type ``building tiles``() =
         Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 1)) tiles)
         Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 2)) tiles)
         Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 3)) tiles)
+    
+    [<Test>]
+    member x.``Tile cost should be 1 for buildings 1 to 20``() = 
+        [ Blue; Yellow; Red ] |> List.iter (fun color -> 
+                                     [ 1..20 ] |> List.iter (fun n -> 
+                                                      let t = (newBuildingTile color n)
+                                                      Assert.AreEqual(1, t.TileCost)))
+    
+    [<Test>]
+    member x.``Tile cost should be 2 for buildings 21 to 23 ``() = 
+        [ Blue; Yellow; Red ] |> List.iter (fun color -> 
+                                     [ 21..23 ] |> List.iter (fun n -> 
+                                                       let t = (newBuildingTile color n)
+                                                       Assert.AreEqual(2, t.TileCost)))
+    
+    [<Test>]
+    member x.``Tile cost should be 3 for buildings 24 and 25``() = 
+        [ Blue; Yellow; Red ] |> List.iter (fun color -> 
+                                     [ 24..25 ] |> List.iter (fun n -> 
+                                                       let t = (newBuildingTile color n)
+                                                       Assert.AreEqual(3, t.TileCost)))
 
 [<TestFixture>]
 type ``affectIdToPlayers function``() = 
@@ -85,7 +107,7 @@ type ``triggered action``() =
         let character1OnAction = whenAction ActionKind.Urbanization (gain Gain.Resource)
         let game = newGame [ "John"; "Carmen" ] []
         let ng = (character1OnAction ActionKind.Urbanization) Player1 game
-        match (withinPlayerStateOf Player1 ng (fun p -> p.nbResource)) with
+        match (withinPlayerStateOf Player1 (fun p -> p.nbResource) ng) with
         | Error e -> Assert.AreEqual(NoResourceAvailable, e)
         | Success v -> Assert.Fail(sprintf "An error should have occured, got: %A" v)
     
@@ -94,7 +116,7 @@ type ``triggered action``() =
         let ng0 = newGame [ "John"; "Carmen" ] []
         let ng1 = gain Gain.AvailableResource Player2 ng0
         let ng2 = gain Gain.AvailableResource Player2 ng1
-        match (withinPlayerStateOf Player2 ng2 (fun p -> p.nbResourceAvailable)) with
+        match (withinPlayerStateOf Player2 (fun p -> p.nbResourceAvailable) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(2, v)
     
@@ -104,7 +126,7 @@ type ``triggered action``() =
         let ng0 = newGame [ "John"; "Carmen" ] []
         let ng1 = gain Gain.AvailableResource Player2 ng0
         let ng2 = (character1OnAction ActionKind.Urbanization) Player2 ng1
-        match (withinPlayerStateOf Player2 ng2 (fun p -> p.nbResource)) with
+        match (withinPlayerStateOf Player2 (fun p -> p.nbResource) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(1, v)
     
@@ -113,7 +135,7 @@ type ``triggered action``() =
         let character1OnAction = whenAction ActionKind.Urbanization (gain Gain.SuccessPoint)
         let ng0 = newGame [ "John"; "Carmen" ] []
         let ng2 = (character1OnAction ActionKind.Urbanization) Player2 ng0
-        match (withinPlayerStateOf Player2 ng2 (fun p -> p.nbSuccessPoint)) with
+        match (withinPlayerStateOf Player2 (fun p -> p.nbSuccessPoint) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(1, v)
     
@@ -132,7 +154,7 @@ type ``triggered action``() =
         //
         // Check player's hand
         //
-        let ts = withinPlayerStateOf Player2 ng2 (fun p -> (p.tiles, p.nbTilePoint))
+        let ts = withinPlayerStateOf Player2 (fun p -> (p.tiles, p.nbTilePoint)) ng2
         match ts with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> 

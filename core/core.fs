@@ -8,11 +8,10 @@ type TwoTrack<'TEntity, 'TError> =
     | Success of 'TEntity
     | Error of 'TError
 
-let bind switchFunction = 
-    fun twoTrackInput -> 
-        match twoTrackInput with
-        | Success s -> switchFunction s
-        | Error f -> Error f
+let bind switchFunction twoTrackInput = 
+    match twoTrackInput with
+    | Success s -> switchFunction s
+    | Error f -> Error f
 
 // -------------------------------------------------------------------------------
 type ResourceColor = 
@@ -62,10 +61,17 @@ type BuildingColor =
 
 type BuildingNum = int
 
+type TileCost = int
+
 type BuildingTile = 
     { color : BuildingColor
       number : BuildingNum }
     override m.ToString() = (sprintf "BuildingTile {%A, %A}" m.color m.number)
+    member this.TileCost: TileCost = 
+        match this.number with
+        | i when i = 24 || i = 25 -> 3
+        | i when i >= 21 && i <= 23 -> 2
+        | _ -> 1
 
 let newBuildingTile (color : BuildingColor) (number : BuildingNum) = 
     { color = color
@@ -184,7 +190,7 @@ let playerStateOf (player : PlayerId) (game : Game) : TwoTrack<PlayerState, Game
     | Some playerState -> Success playerState
 
 
-let withinPlayerStateOf<'T> (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) (func : PlayerState -> 'T) : TwoTrack<'T, GameError> = 
+let withinPlayerStateOf<'T> (player : PlayerId) (func : PlayerState -> 'T) (gameTT : TwoTrack<Game, GameError>)  : TwoTrack<'T, GameError> = 
     gameTT
     |> bind (playerStateOf player)
     |> bind (fun ps -> Success(func ps))
@@ -262,7 +268,6 @@ let gain (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) 
     | Error _ -> gameTT
     | Success game -> 
         let ps = game.playerStates
-        let ts = game.availableTiles
         match ps.TryFind(player) with
         | None -> Error(PlayerIdNotBound player)
         | Some playerState -> 
