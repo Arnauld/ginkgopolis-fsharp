@@ -33,7 +33,7 @@ type ``building tiles``() =
 type ``affectIdToPlayers function``() = 
     
     [<Test>]
-    member x.``should fail when trying to map more than 5 players ``() = 
+    member x.``should fail when trying to handle more than 5 players ``() = 
         match affectIdToPlayers [ "John"; "Carmen"; "Pacman"; "Flibuste"; "Colin"; "Martin" ] AllPlayerIds Map.empty with
         | Error(TooMuchPlayer ps) -> Assert.AreEqual([ "Martin" ], ps)
         | Error x -> Assert.Fail(sprintf "Wrong error: %A" x)
