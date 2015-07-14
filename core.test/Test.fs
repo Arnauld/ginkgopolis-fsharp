@@ -31,25 +31,36 @@ type ``building tiles``() =
         Assert.IsTrue(List.exists (eq (newBuildingTile Yellow 3)) tiles)
     
     [<Test>]
-    member x.``Tile cost should be 1 for buildings 1 to 20``() = 
+    member x.``Tile cost should be 1 for lvl1 building and Green space``() = 
+        Assert.AreEqual(1, tileCostOf BuildingLvl1)
+        Assert.AreEqual(1, tileCostOf GreenSpace)
+    
+    [<Test>]
+    member x.``Tile cost should be 2 for lvl2 building``() = Assert.AreEqual(2, tileCostOf BuildingLvl2)
+    
+    [<Test>]
+    member x.``Tile cost should be 3 for Prestige building``() = Assert.AreEqual(3, tileCostOf PrestigeBuilding)
+    
+    [<Test>]
+    member x.``Tile type should be Lvl1 for buildings 1 to 20``() = 
         [ Blue; Yellow; Red ] |> List.iter (fun color -> 
                                      [ 1..20 ] |> List.iter (fun n -> 
                                                       let t = (newBuildingTile color n)
-                                                      Assert.AreEqual(1, t.TileCost)))
+                                                      Assert.AreEqual(BuildingLvl1, t.TileType)))
     
     [<Test>]
-    member x.``Tile cost should be 2 for buildings 21 to 23 - expert expansion``() = 
+    member x.``Tile type should be Lvl2 for buildings 21 to 23 - expert expansion``() = 
         [ Blue; Yellow; Red ] |> List.iter (fun color -> 
                                      [ 21..23 ] |> List.iter (fun n -> 
                                                        let t = (newBuildingTile color n)
-                                                       Assert.AreEqual(2, t.TileCost)))
+                                                       Assert.AreEqual(BuildingLvl2, t.TileType)))
     
     [<Test>]
-    member x.``Tile cost should be 3 for buildings 24 and 25 - expert expansion``() = 
+    member x.``Tile type should be Prestige for buildings 24 and 25 - expert expansion``() = 
         [ Blue; Yellow; Red ] |> List.iter (fun color -> 
                                      [ 24..25 ] |> List.iter (fun n -> 
                                                        let t = (newBuildingTile color n)
-                                                       Assert.AreEqual(3, t.TileCost)))
+                                                       Assert.AreEqual(PrestigeBuilding, t.TileType)))
 
 [<TestFixture>]
 type ``affectIdToPlayers function``() = 
@@ -173,3 +184,25 @@ type ``triggered action``() =
                   (newBuildingTile Red 9) ]
                 |> List.map (fun t -> BuildingTile t)
             Assert.AreEqual(expectedTiles, g.availableTiles)
+
+[<TestFixture>]
+type ``draw tile``() = 
+    [<Test>]
+    member x.``world should not be updated when action triggered and callback types do not match``() = 
+        let availableTiles : Tile list = 
+            [ (newBuildingTile Blue 7)
+              (newBuildingTile Yellow 5)
+              (newBuildingTile Red 9) ]
+            |> List.map (fun t -> BuildingTile t)
+        
+        let ng0 = 
+            newGame [ "John"; "Carmen" ] availableTiles
+            |> (gain Gain.Tile Player2)
+            |> (drawTile Player2 BuildingLvl1)
+            |> bind (playerStateOf Player2)
+        
+        match ng0 with
+        | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
+        | Success(game, ps) -> 
+            Assert.AreEqual([ BuildingTile(newBuildingTile Blue 7) ], ps.tiles)
+            Assert.AreEqual(0, ps.nbTilePoint)

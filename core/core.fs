@@ -61,17 +61,30 @@ type BuildingColor =
 
 type BuildingNum = int
 
+type TileType = 
+    | GreenSpace
+    | BuildingLvl1
+    | BuildingLvl2
+    | PrestigeBuilding
+
+let tileCostOf (tileType : TileType) = 
+    match tileType with
+    | GreenSpace -> 1
+    | BuildingLvl1 -> 1
+    | BuildingLvl2 -> 2
+    | PrestigeBuilding -> 3
+
 type TileCost = int
 
 type BuildingTile = 
     { color : BuildingColor
       number : BuildingNum }
     override m.ToString() = (sprintf "BuildingTile {%A, %A}" m.color m.number)
-    member this.TileCost: TileCost = 
+    member this.TileType : TileType = 
         match this.number with
-        | i when i = 24 || i = 25 -> 3
-        | i when i >= 21 && i <= 23 -> 2
-        | _ -> 1
+        | num when num = 25 || num = 24 -> PrestigeBuilding
+        | num when num = 23 || num = 22 || num = 21 -> BuildingLvl2
+        | _ -> BuildingLvl1
 
 let newBuildingTile (color : BuildingColor) (number : BuildingNum) = 
     { color = color
@@ -88,6 +101,10 @@ type GreenSpaceTile = unit
 type Tile = 
     | BuildingTile of BuildingTile
     | GreenSpaceTile of GreenSpaceTile
+    member this.TileType : TileType = 
+        match this with
+        | BuildingTile bt -> bt.TileType
+        | GreenSpaceTile gs -> GreenSpace
 
 let asTile (buildingTile : BuildingTile) = BuildingTile buildingTile
 
@@ -182,18 +199,50 @@ type GameError =
     | NoResourceAvailable
     | NoTileAvailableInGame
     | UnsupportedGain
+    | NotEnoughTilePoint of TileCost * int
+    | NoTileForType of TileType
 
-let playerStateOf (player : PlayerId) (game : Game) : TwoTrack<PlayerState, GameError> = 
+let playerStateOf (player : PlayerId) (game : Game) : TwoTrack<Game * PlayerState, GameError> = 
     let ps = game.playerStates
     match ps.TryFind(player) with
     | None -> Error(PlayerIdNotBound player)
-    | Some playerState -> Success playerState
+    | Some playerState -> Success(game, playerState)
 
-
-let withinPlayerStateOf<'T> (player : PlayerId) (func : PlayerState -> 'T) (gameTT : TwoTrack<Game, GameError>)  : TwoTrack<'T, GameError> = 
+let withinPlayerStateOf<'T> (player : PlayerId) (func : PlayerState -> 'T) (gameTT : TwoTrack<Game, GameError>) : TwoTrack<'T, GameError> = 
     gameTT
     |> bind (playerStateOf player)
-    |> bind (fun ps -> Success(func ps))
+    |> bind (fun (game, ps) -> Success(func ps))
+
+let rec grabTile (tileType : TileType) (tiles : Tile list) : Option<Tile * Tile list> = 
+    let rec grabTileRec (tileType : TileType) (alreadyTraversed : Tile list) (remainings : Tile list) : Option<Tile * Tile list> = 
+        match remainings with
+        | [] -> None
+        | h :: tail -> 
+            if h.TileType = tileType then 
+                let others = List.append alreadyTraversed tail
+                Some(h, others)
+            else (grabTileRec tileType (h :: alreadyTraversed) tail)
+    grabTileRec tileType List.empty tiles
+
+let drawTile (player : PlayerId) (tileType : TileType) (gameTT : TwoTrack<Game, GameError>) : TwoTrack<Game, GameError> = 
+    let tileCost = tileCostOf tileType
+    gameTT
+    |> bind (playerStateOf player)
+    |> bind (fun (game, ps) -> 
+           if tileCost > ps.nbTilePoint then Error(NotEnoughTilePoint(tileCost, ps.nbTilePoint))
+           else Success(game, ps))
+    |> bind (fun (game, ps) -> 
+           let found = grabTile tileType game.availableTiles
+           match found with
+           | None -> Error(NoTileForType tileType)
+           | Some(tile, remainingTiles) -> 
+               let newState = 
+                   { ps with nbTilePoint = ps.nbTilePoint - tileCost
+                             tiles = tile :: ps.tiles }
+               
+               let allPs = game.playerStates
+               Success { game with playerStates = allPs.Add(player, newState)
+                                   availableTiles = remainingTiles })
 
 // interleave player and playerIds
 let rec affectIdToPlayers (players : Player list) (playerIds : PlayerId list) (mapped : Map<Player, PlayerId>) = 
