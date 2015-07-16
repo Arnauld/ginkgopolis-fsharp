@@ -312,7 +312,7 @@ type Gain =
     | SuccessPoint = 2
     | Tile = 3
 
-let gain (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) = 
+let gainSingleItem (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) = 
     match gameTT with
     | Error _ -> gameTT
     | Success game -> 
@@ -340,14 +340,10 @@ let gain (item : Gain) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) 
                 Success { game with playerStates = ps.Add(player, newState) }
             | _ -> Error UnsupportedGain
 
-let consumeTilePoint() = 
-    //                match ts with
-    //                | [] -> Error NoTileAvailableInGame
-    //                | tile :: remainings -> 
-    //                    let newState = { playerState with nbTilePoint = nbTilePoint + 1 }
-    //                    Success { game with playerStates = ps.Add(player, newState)
-    //                                        availableTiles = remainings }
-    failwith "Not implemented"
+let gain (items : Gain list) (player : PlayerId) (gameTT : TwoTrack<Game, GameError>) = 
+    items
+    |> List.fold (fun tt item -> gainSingleItem item player tt) gameTT
+
 
 let whenAction (requiredKind : ActionKind) (updater : UpdateGame) = 
     fun (kind : ActionKind) -> 
@@ -375,7 +371,7 @@ let character1 : CharacterCard =
       color = Red
       group = Group1
       initialItems = [ InitialItem.Resource; InitialItem.SuccessPoint; InitialItem.BuildingTile ]
-      onAction = whenAction ActionKind.Urbanization (gain Gain.Resource) }
+      onAction = whenAction ActionKind.Urbanization (gain [Gain.Resource]) }
 
 //    ___       _ _     _ _                 _        _   _             
 //   / __\_   _(_) | __| (_)_ __   __ _    /_\   ___| |_(_) ___  _ __  
@@ -388,12 +384,13 @@ type BuildingActions = BuildingCardId -> OnAction
 let defaultBuildingActions : BuildingActions = 
     fun cardId -> 
         match (cardId.color, cardId.number) with
-        | (Blue, 1) -> whenAction ActionKind.Exploit (gain Gain.Tile)
-        | (Blue, 2) -> whenAction ActionKind.Urbanization (gain Gain.Tile)
-        | (Blue, 3) -> whenAction ActionKind.FloorConstruction (gain Gain.Tile)
-        | (Blue, 4) -> whenAction ActionKind.Exploit (gain Gain.Tile)
-        | (Blue, 5) -> whenAction ActionKind.Urbanization (gain Gain.Tile)
-        | (Blue, 6) -> whenAction ActionKind.FloorConstruction (gain Gain.Tile)
+        | (Blue, 1) -> whenAction ActionKind.Exploit (gain [Gain.Tile])
+        | (Blue, 2) -> whenAction ActionKind.Urbanization (gain [Gain.Tile])
+        | (Blue, 3) -> whenAction ActionKind.FloorConstruction (gain [Gain.Tile])
+        | (Blue, 4) -> whenAction ActionKind.Exploit (gain [Gain.Tile])
+        | (Blue, 5) -> whenAction ActionKind.Urbanization (gain [Gain.Tile])
+        | (Blue, 6) -> whenAction ActionKind.FloorConstruction (gain [Gain.Tile])
+        | (Blue, 7) -> whenAction ActionKind.Exploit (gain [Gain.Tile; Gain.SuccessPoint])
         | _ -> NoAction
 
 //    __                         _   
