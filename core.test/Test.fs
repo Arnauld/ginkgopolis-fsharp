@@ -113,46 +113,62 @@ type ``triggered action``() =
         Assert.AreEqual(game, ((character1OnAction ActionKind.EndGame) Player1 game))
         Assert.AreEqual(game, ((character1OnAction ActionKind.FloorConstruction) Player1 game))
     
+
+
+[<TestFixture>]
+type ``gain behaviors``() = 
+
     [<Test>]
-    member x.``increase number of resources should fail when none are available``() = 
-        let character1OnAction = whenAction ActionKind.Urbanization (gain [Gain.Resource])
-        let game = newGame [ "John"; "Carmen" ] []
-        let ng = (character1OnAction ActionKind.Urbanization) Player1 game
+    member x.``an error should occurs when trying to gain a resource but none are available``() = 
+        let ng1 = 
+            newGame [ "John"; "Carmen" ] []
+            |> (gain [Gain.Resource] Player2)
+
+        match ng1 with
+        | Error e -> Assert.AreEqual(NoResourceAvailable, e)
+        | Success s -> Assert.Fail(sprintf "An error should have occured, got: %A" s)
+
+    [<Test>]
+    member x.``gaining a resource should fail when none are available``() = 
+        let ng = 
+            newGame [ "John"; "Carmen" ] []
+            |> (gain [Gain.Resource] Player1)
         match (withinPlayerStateOf Player1 (fun p -> p.nbResource) ng) with
         | Error e -> Assert.AreEqual(NoResourceAvailable, e)
         | Success v -> Assert.Fail(sprintf "An error should have occured, got: %A" v)
     
     [<Test>]
-    member x.``increase number of availables resource should increment its count``() = 
-        let ng0 = newGame [ "John"; "Carmen" ] []
-        let ng1 = gain [Gain.AvailableResource] Player2 ng0
-        let ng2 = gain [Gain.AvailableResource] Player2 ng1
+    member x.``gaining an available resource should increment its count``() = 
+        let ng2 = 
+            newGame [ "John"; "Carmen" ] []
+            |> (gain [Gain.AvailableResource] Player2)
+            |> (gain [Gain.AvailableResource] Player2)
         match (withinPlayerStateOf Player2 (fun p -> p.nbResourceAvailable) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(2, v)
     
     [<Test>]
-    member x.``increase number of resources should consume player's available resource``() = 
-        let character1OnAction = whenAction ActionKind.Urbanization (gain [Gain.Resource])
-        let ng0 = newGame [ "John"; "Carmen" ] []
-        let ng1 = gain [Gain.AvailableResource] Player2 ng0
-        let ng2 = (character1OnAction ActionKind.Urbanization) Player2 ng1
+    member x.``gaining a resource should consume player's available resource``() = 
+        let ng2 = 
+            newGame [ "John"; "Carmen" ] []
+            |> (gain [Gain.AvailableResource] Player2)
+            |> (gain [Gain.Resource] Player2)
         match (withinPlayerStateOf Player2 (fun p -> p.nbResource) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(1, v)
     
     [<Test>]
-    member x.``increase number of success point should work!``() = 
-        let character1OnAction = whenAction ActionKind.Urbanization (gain [Gain.SuccessPoint])
-        let ng0 = newGame [ "John"; "Carmen" ] []
-        let ng2 = (character1OnAction ActionKind.Urbanization) Player2 ng0
+    member x.``gaining a success point should increment its count!``() = 
+        let ng2 = 
+            newGame [ "John"; "Carmen" ] []
+            |> (gain [Gain.SuccessPoint] Player2)
         match (withinPlayerStateOf Player2 (fun p -> p.nbSuccessPoint) ng2) with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success v -> Assert.AreEqual(1, v)
     
     [<Test>]
-    member x.``increase tile should no alter available tiles in game and player's hand``() = 
-        let character2OnAction = whenAction ActionKind.Urbanization (gain [Gain.Tile])
+    member x.``gaining tile should not alter available tiles in game and player's hand``() = 
+        let character2OnAction = whenAction ActionKind.Urbanization 
         
         let availableTiles : Tile list = 
             [ (newBuildingTile Blue 7)
@@ -160,8 +176,9 @@ type ``triggered action``() =
               (newBuildingTile Red 9) ]
             |> List.map (fun t -> BuildingTile t)
         
-        let ng0 = newGame [ "John"; "Carmen" ] availableTiles
-        let ng2 = (character2OnAction ActionKind.Urbanization) Player2 ng0
+        let ng2 = 
+            newGame [ "John"; "Carmen" ] availableTiles
+            |> (gain [Gain.Tile] Player2)
         //
         // Check player's hand
         //
@@ -178,31 +195,7 @@ type ``triggered action``() =
         match ng2 with
         | Error e -> Assert.Fail(sprintf "No error should have occured, got: %A" e)
         | Success g -> 
-            let expectedTiles = 
-                [ (newBuildingTile Blue 7)
-                  (newBuildingTile Yellow 5)
-                  (newBuildingTile Red 9) ]
-                |> List.map (fun t -> BuildingTile t)
-            Assert.AreEqual(expectedTiles, g.availableTiles)
-
-[<TestFixture>]
-type ``gain behaviors``() = 
-
-    [<Test>]
-    member x.``an error should occurs when trying to gain a resource but none are available``() = 
-        let availableTiles : Tile list = 
-            [ (newBuildingTile Blue 21)
-              (newBuildingTile Yellow 5)
-              (newBuildingTile Red 9) ]
-            |> List.map (fun t -> BuildingTile t)
-        
-        let ng1 = 
-            newGame [ "John"; "Carmen" ] availableTiles
-            |> (gain [Gain.Resource] Player2)
-
-        match ng1 with
-        | Error e -> Assert.AreEqual(NoResourceAvailable, e)
-        | Success s -> Assert.Fail(sprintf "An error should have occured, got: %A" s)
+            Assert.AreEqual(availableTiles, g.availableTiles)
     
 
 [<TestFixture>]
